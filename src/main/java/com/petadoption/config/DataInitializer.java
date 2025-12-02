@@ -18,9 +18,9 @@ public class DataInitializer {
     @Bean
     CommandLineRunner initUsers(UserRepository userRepository) {
         return args -> {
-            if (userRepository.findByUsername("staff1").isEmpty()) {
+            if (userRepository.findByEmail("staff1@gmail.com").isEmpty()) {
                 User staff = User.builder()
-                        .username("staff1")
+                        .email("staff1@gmail.com")
                         .password(encoder.encode("password123"))
                         .role(Role.STAFF)
                         .build();

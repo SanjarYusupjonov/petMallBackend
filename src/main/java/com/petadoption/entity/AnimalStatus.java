@@ -1,26 +1,21 @@
 package com.petadoption.entity;
 
-import com.petadoption.enums.Role;
+import com.petadoption.enums.AnimalStatusEnum;
 import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-@Table(name = "\"users\"")
-public class User {
+public class AnimalStatus {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true)
-    private String email;
-
-    private String password;
-
     @Enumerated(EnumType.STRING)
-    private Role role; // ADOPTER or STAFF
+    @Column(unique = true)
+    private AnimalStatusEnum name; // AVAILABLE, ADOPTED, PENDING
 }

@@ -15,9 +15,9 @@ public class JwtUtil {
     private final String SECRET = "mysupersecretkeymysupersecretkey123"; // 32+ chars
 
     // Generate token with username and role
-    public String generateToken(String username, String role) {
+    public String generateToken(String email, String role) {
         return Jwts.builder()
-                .setSubject(username)
+                .setSubject(email)
                 .claim("role", role)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 3600_000)) // 1 hour
