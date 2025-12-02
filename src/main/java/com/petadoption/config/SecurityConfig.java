@@ -20,18 +20,14 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.disable())
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .requestMatchers("/staff/**").hasAuthority("STAFF")
-                        .requestMatchers("/adopter/**").hasAuthority("ADOPTER")
-                        .requestMatchers("/shelter/getAll").hasAnyAuthority("ADOPTER", "STAFF")
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll()   // FULL ACCESS
                 )
                 .httpBasic(httpBasic -> httpBasic.disable());
 
         return http.build();
     }
+
 
 
 

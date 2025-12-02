@@ -2,9 +2,13 @@ package com.petadoption.controller;
 
 import com.petadoption.dto.AdopterDto;
 import com.petadoption.dto.AdopterProfileUpdateDto;
+import com.petadoption.dto.ShelterResponseDto;
 import com.petadoption.service.AdopterService;
+import com.petadoption.service.ShelterService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/adopter")
@@ -12,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 public class AdopterController {
 
     private final AdopterService adopterService;
+    private final ShelterService shelterService;
 
     @GetMapping("/me")
     public AdopterDto getProfile(@RequestHeader("Authorization") String authHeader) {
