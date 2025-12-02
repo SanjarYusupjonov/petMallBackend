@@ -26,7 +26,7 @@ public class AuthService {
     private final AdoptersHouseholdRepository adoptersHouseholdRepository;
 
     // Signup for ADOPTER only
-    public String signup(SignupRequest req) {
+    public LoginResponse signup(SignupRequest req) {
         if (userRepository.findByEmail(req.getEmail()).isPresent()) {
             throw new RuntimeException("Email already exists");
         }
@@ -57,7 +57,8 @@ public class AuthService {
 
         adoptersHouseholdRepository.save(household);
 
-        return "Adopter registered successfully";
+        String token = jwtUtil.generateToken(user.getEmail(), user.getRole().name());
+        return new LoginResponse(token, user.getRole());
     }
 
 
