@@ -9,6 +9,8 @@ import java.net.URI;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse.BodyHandlers;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.petadoption.dto.ShelterResponseDto;
+import com.petadoption.dto.StaffDto;
 
 public class PetMallCLI {
 
@@ -42,8 +44,9 @@ public class PetMallCLI {
                 System.out.println("3. List Pets");
                 System.out.println("4. Apply for Adoption");
                 System.out.println("5. Change Password");
-                System.out.println("6. Logout");
-                System.out.println("7. Exit");
+                System.out.println("6. See Shelters");
+                System.out.println("7. Logout");
+                System.out.println("8. Exit");
                 System.out.print("Choose: ");
                 String choice = scanner.nextLine();
 
@@ -53,8 +56,9 @@ public class PetMallCLI {
                     case "3" -> listPets();
                     case "4" -> applyAdoption();
                     case "5" -> changePassword();
-                    case "6" -> logout();
-                    case "7" -> {
+                    case "6" -> seeShelters();
+                    case "7" -> logout();
+                    case "8" -> {
                         System.out.println("Bye!");
                         System.exit(0);
                     }
@@ -296,4 +300,74 @@ public class PetMallCLI {
             e.printStackTrace();
         }
     }
+
+    private static void seeShelters() {
+        try {
+            if (jwtToken == null || jwtToken.isEmpty()) {
+                System.out.println("You must login first.");
+                return;
+            }
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("http://localhost:8080/shelter/getAll")) // adjust endpoint if needed
+                    .header("Authorization", "Bearer " + jwtToken)
+                    .header("Content-Type", "application/json")
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() == 200) {
+                // Deserialize JSON into ShelterResponseDto array
+                ShelterResponseDto[] shelters = mapper.readValue(response.body(), ShelterResponseDto[].class);
+
+                System.out.println("=== Shelters List ===\n");
+
+                for (ShelterResponseDto shelter : shelters) {
+                    System.out.println("ID: " + shelter.getId());
+                    System.out.println("Name: " + shelter.getName());
+                    System.out.println("Address: " + shelter.getAddress());
+                    System.out.println("Capacity: " + shelter.getCapacity());
+
+                    System.out.println("\nContacts:");
+                    if (shelter.getShelterContacts() != null && !shelter.getShelterContacts().isEmpty()) {
+                        for (ShelterResponseDto.ShelterContact contact : shelter.getShelterContacts()) {
+                            System.out.println(" - " + contact.getContactType() + ": " + contact.getValue());
+                        }
+                    } else {
+                        System.out.println(" - No contacts available");
+                    }
+
+                    System.out.println("\nWorking Hours:");
+                    if (shelter.getShelterWorkingHours() != null && !shelter.getShelterWorkingHours().isEmpty()) {
+                        for (ShelterResponseDto.ShelterWorkingHour wh : shelter.getShelterWorkingHours()) {
+                            System.out.println(" - " + wh.getDayOfWeek() + ": " +
+                                    wh.getOpeningTime() + " - " + wh.getClosingTime());
+                        }
+                    } else {
+                        System.out.println(" - No working hours available");
+                    }
+
+                    System.out.println("\nStaff:");
+                    if (shelter.getStaffs() != null && !shelter.getStaffs().isEmpty()) {
+                        for (StaffDto staff : shelter.getStaffs()) {
+                            System.out.println(" - " + staff.getName() + " (ID: " + staff.getId() +
+                                    ", Address: " + staff.getAddress() + ", UserID: " + staff.getUserId() + ")");
+                        }
+                    } else {
+                        System.out.println(" - No staff available");
+                    }
+
+                    System.out.println("\n--------------------------\n");
+                }
+
+            } else {
+                System.out.println("Failed to fetch shelters: " + response.statusCode() + "\n" + response.body());
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 }

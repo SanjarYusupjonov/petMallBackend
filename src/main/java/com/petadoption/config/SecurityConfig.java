@@ -25,6 +25,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/staff/**").hasAuthority("STAFF")
                         .requestMatchers("/adopter/**").hasAuthority("ADOPTER")
+                        .requestMatchers("/shelter/getAll").hasAnyAuthority("ADOPTER", "STAFF")
                         .anyRequest().authenticated()
                 )
                 .httpBasic(httpBasic -> httpBasic.disable());
