@@ -18,9 +18,8 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.csrf().disable()
-                .cors()
-                .and()
+        http.csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.disable())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
@@ -28,7 +27,7 @@ public class SecurityConfig {
                         .requestMatchers("/adopter/**").hasAuthority("ADOPTER")
                         .anyRequest().authenticated()
                 )
-                .httpBasic(httpBasic -> httpBasic.disable()); // <-- disable basic auth
+                .httpBasic(httpBasic -> httpBasic.disable());
 
         return http.build();
     }

@@ -16,7 +16,6 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -35,25 +34,29 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             String token = authHeader.substring(7);
 
             try {
-                // Parse and validate JWT
                 Jws<Claims> claimsJws = jwtUtil.parseToken(token);
                 Claims claims = claimsJws.getBody();
 
                 String username = claims.getSubject();
-                String role = claims.get("role", String.class); // ADOPTER or STAFF
+                String role = claims.get("role", String.class);
 
-                // Set authentication in SecurityContext
-                UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(
-                                username,
-                                null,
-                                List.of(new SimpleGrantedAuthority(role))
-                        );
+                System.out.println("DEBUG: Username: " + username);
+                System.out.println("DEBUG: Role from JWT: " + role);
 
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                if (role != null && !role.isEmpty()) {
+                    UsernamePasswordAuthenticationToken authToken =
+                            new UsernamePasswordAuthenticationToken(
+                                    username,
+                                    null,
+                                    List.of(new SimpleGrantedAuthority(role))
+                            );
+
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                    System.out.println("DEBUG: Authentication set successfully");
+                }
 
             } catch (JwtException e) {
-                // Invalid token
+                System.err.println("JWT validation failed: " + e.getMessage());
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 return;
             }
