@@ -17,8 +17,15 @@ public class ShelterService {
     private final ShelterRepository shelterRepository;
 
     @Transactional(readOnly = true)
-    public List<ShelterResponseDto> getAll(String token) {
-        List<Shelter> shelters = shelterRepository.findAllWithDetails();
+    public List<ShelterResponseDto> getAll() {
+        List<Shelter> shelters = shelterRepository.findAll(); // simple fetch
+
+        // initialize collections to avoid lazy loading issues
+        shelters.forEach(s -> {
+            s.getContacts().size();
+            s.getWorkingHours().size();
+            s.getStaffMembers().forEach(st -> st.getUser().getId());
+        });
 
         return shelters.stream().map(shelter -> {
             List<ShelterResponseDto.ShelterContact> contacts = shelter.getContacts().stream()
@@ -54,7 +61,6 @@ public class ShelterService {
                     .shelterWorkingHours(workingHours)
                     .staffs(staffs)
                     .build();
-
         }).toList();
     }
 }

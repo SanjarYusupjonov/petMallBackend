@@ -9,6 +9,7 @@ import java.net.URI;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse.BodyHandlers;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.petadoption.dto.ApplicationResponseDto;
 import com.petadoption.dto.ShelterResponseDto;
 import com.petadoption.dto.StaffDto;
 
@@ -45,8 +46,9 @@ public class PetMallCLI {
                 System.out.println("4. Apply for Adoption");
                 System.out.println("5. Change Password");
                 System.out.println("6. See Shelters");
-                System.out.println("7. Logout");
-                System.out.println("8. Exit");
+                System.out.println("7. See Applications");
+                System.out.println("8. Logout");
+                System.out.println("9. Exit");
                 System.out.print("Choose: ");
                 String choice = scanner.nextLine();
 
@@ -57,8 +59,9 @@ public class PetMallCLI {
                     case "4" -> applyAdoption();
                     case "5" -> changePassword();
                     case "6" -> seeShelters();
-                    case "7" -> logout();
-                    case "8" -> {
+                    case "7" -> seeApplications();
+                    case "8" -> logout();
+                    case "9" -> {
                         System.out.println("Bye!");
                         System.exit(0);
                     }
@@ -369,5 +372,57 @@ public class PetMallCLI {
             e.printStackTrace();
         }
     }
+
+    private static void seeApplications() {
+        try {
+            if (jwtToken == null || jwtToken.isEmpty()) {
+                System.out.println("You must login first.");
+                return;
+            }
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("http://localhost:8080/application/getAll"))
+                    .header("Authorization", "Bearer " + jwtToken)
+                    .header("Content-Type", "application/json") // GET usually uses JSON
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() == 200) {
+                // Parse JSON into list of ApplicationResponseDto
+                List<ApplicationResponseDto> applications = mapper.readValue(
+                        response.body(),
+                        mapper.getTypeFactory().constructCollectionType(List.class, ApplicationResponseDto.class)
+                );
+
+                if (applications.isEmpty()) {
+                    System.out.println("No applications found.");
+                } else {
+                    System.out.println("=== Applications ===");
+                    for (ApplicationResponseDto app : applications) {
+                        System.out.println("----------------------------");
+                        System.out.println("Application ID:      " + app.getId());
+                        System.out.println("Animal Name:         " + app.getAnimalName());
+                        System.out.println("Animal Species:      " + app.getAnimalSpecies());
+                        System.out.println("Submission Date:     " + app.getSubmissionDate());
+                        System.out.println("Status:              " + app.getStatus());
+                        System.out.println("Status Updated Date: " + app.getStatusUpdatedDate());
+                    }
+                    System.out.println("============================");
+                }
+
+            } else {
+                System.out.println("Failed to fetch applications: " + response.statusCode());
+                System.out.println(response.body());
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
 
 }

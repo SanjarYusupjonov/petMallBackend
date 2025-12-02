@@ -30,38 +30,38 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String authHeader = request.getHeader("Authorization");
 
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
+        // 🔥 If no token → allow request (don't block)
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
-            try {
-                Jws<Claims> claimsJws = jwtUtil.parseToken(token);
-                Claims claims = claimsJws.getBody();
+        String token = authHeader.substring(7);
 
-                String username = claims.getSubject();
-                String role = claims.get("role", String.class);
+        try {
+            Jws<Claims> claimsJws = jwtUtil.parseToken(token);
+            Claims claims = claimsJws.getBody();
 
-                System.out.println("DEBUG: Username: " + username);
-                System.out.println("DEBUG: Role from JWT: " + role);
+            String username = claims.getSubject();
+            String role = claims.get("role", String.class);
 
-                if (role != null && !role.isEmpty()) {
-                    UsernamePasswordAuthenticationToken authToken =
-                            new UsernamePasswordAuthenticationToken(
-                                    username,
-                                    null,
-                                    List.of(new SimpleGrantedAuthority(role))
-                            );
-
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-                    System.out.println("DEBUG: Authentication set successfully");
-                }
-
-            } catch (JwtException e) {
-                System.err.println("JWT validation failed: " + e.getMessage());
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                return;
+            if (role != null) {
+                UsernamePasswordAuthenticationToken authToken =
+                        new UsernamePasswordAuthenticationToken(
+                                username,
+                                null,
+                                List.of(new SimpleGrantedAuthority(role))
+                        );
+                SecurityContextHolder.getContext().setAuthentication(authToken);
             }
+
+        } catch (JwtException e) {
+            // 🔥 Token invalid → ignore and continue (don’t reject!)
+            filterChain.doFilter(request, response);
+            return;
         }
 
         filterChain.doFilter(request, response);
     }
 }
+

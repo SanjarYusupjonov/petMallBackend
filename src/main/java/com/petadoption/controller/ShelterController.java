@@ -17,9 +17,9 @@ public class ShelterController {
     private final ShelterService shelterService;
 
     @GetMapping("/getAll")
-    List<ShelterResponseDto> getAll(@RequestHeader("Authorization") String authHeader) {
-        String token = authHeader.replace("Bearer ", "");
-
-        return shelterService.getAll(token);
+    public List<ShelterResponseDto> getAll() {
+        // extract token from "Bearer <token>"
+//        String token = authHeader.replace("Bearer ", "");
+        return shelterService.getAll();
     }
 }
