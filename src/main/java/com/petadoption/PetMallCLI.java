@@ -253,6 +253,7 @@ public class PetMallCLI {
     }
 
     private static void changePassword() {
+
         try {
             if (jwtToken == null || jwtToken.isEmpty()) {
                 System.out.println("You must login first.");
