@@ -2,6 +2,7 @@ package com.petadoption.controller;
 
 import com.petadoption.dto.AdopterDto;
 import com.petadoption.dto.AdopterProfileUpdateDto;
+import com.petadoption.dto.AdoptionDto;
 import com.petadoption.dto.ShelterResponseDto;
 import com.petadoption.service.AdopterService;
 import com.petadoption.service.ShelterService;
@@ -43,5 +44,11 @@ public class AdopterController {
         // extract token from "Bearer <token>"
         String token = authHeader.replace("Bearer ", "");
         return adopterService.updatePassword(token, password);
+    }
+
+    @GetMapping("/getAdoptions")
+    List<AdoptionDto> getAdoptions(@RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.replace("Bearer ", "");
+        return adopterService.getAdoptions(token);
     }
 }

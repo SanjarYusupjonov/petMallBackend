@@ -9,6 +9,7 @@ import java.net.URI;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse.BodyHandlers;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.petadoption.dto.AdoptionDto;
 import com.petadoption.dto.ApplicationResponseDto;
 import com.petadoption.dto.ShelterResponseDto;
 import com.petadoption.dto.StaffDto;
@@ -47,8 +48,9 @@ public class PetMallCLI {
                 System.out.println("5. Change Password");
                 System.out.println("6. See Shelters");
                 System.out.println("7. See Applications");
-                System.out.println("8. Logout");
-                System.out.println("9. Exit");
+                System.out.println("8. See Adoptions");
+                System.out.println("9. Logout");
+                System.out.println("10. Exit");
                 System.out.print("Choose: ");
                 String choice = scanner.nextLine();
 
@@ -60,8 +62,9 @@ public class PetMallCLI {
                     case "5" -> changePassword();
                     case "6" -> seeShelters();
                     case "7" -> seeApplications();
-                    case "8" -> logout();
-                    case "9" -> {
+                    case "8" -> seeAdoptions();
+                    case "9" -> logout();
+                    case "10" -> {
                         System.out.println("Bye!");
                         System.exit(0);
                     }
@@ -414,6 +417,53 @@ public class PetMallCLI {
 
             } else {
                 System.out.println("Failed to fetch applications: " + response.statusCode());
+                System.out.println(response.body());
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void seeAdoptions() {
+        try {
+            if (jwtToken == null || jwtToken.isEmpty()) {
+                System.out.println("You must login first.");
+                return;
+            }
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("http://localhost:8080/adopter/getAdoptions")) // your endpoint
+                    .header("Authorization", "Bearer " + jwtToken)
+                    .header("Content-Type", "application/json")
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() == 200) {
+                // Parse JSON into list of AdoptionDto
+                List<AdoptionDto> adoptions = mapper.readValue(
+                        response.body(),
+                        mapper.getTypeFactory().constructCollectionType(List.class, AdoptionDto.class)
+                );
+
+                if (adoptions.isEmpty()) {
+                    System.out.println("No adoptions found.");
+                } else {
+                    System.out.println("=== Adoptions ===");
+                    for (AdoptionDto adoption : adoptions) {
+                        System.out.println("----------------------------");
+                        System.out.println("Adoption ID:      " + adoption.getId());
+                        System.out.println("Application ID:   " + adoption.getApplicationId());
+                        System.out.println("Date:             " + adoption.getDate());
+                        System.out.println("Fee:              " + adoption.getFee());
+                    }
+                    System.out.println("============================");
+                }
+
+            } else {
+                System.out.println("Failed to fetch adoptions: " + response.statusCode());
                 System.out.println(response.body());
             }
 
