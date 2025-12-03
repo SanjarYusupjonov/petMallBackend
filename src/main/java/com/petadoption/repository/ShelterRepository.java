@@ -14,6 +14,6 @@ public interface ShelterRepository extends JpaRepository<Shelter,Long> {
             "LEFT JOIN FETCH s.workingHours " +
             "LEFT JOIN FETCH s.staffMembers st " +
             "LEFT JOIN FETCH st.user")
-    List<Shelter> findAllWithDetails();
+List<Shelter> findAllWithDetails();
 
 }

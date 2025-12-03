@@ -32,7 +32,7 @@ public class ApplicationService {
                         .animalName((String) r[1])
                         .animalSpecies((String) r[2])
                         .submissionDate((Date) r[3])
-                        .status((Status) r[4])
+                        .status(Status.valueOf((String) r[4]))
                         .statusUpdatedDate((Date) r[5])
                         .build())
                 .toList();
