@@ -9,10 +9,9 @@ import java.net.URI;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse.BodyHandlers;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.petadoption.dto.AdoptionDto;
-import com.petadoption.dto.ApplicationResponseDto;
-import com.petadoption.dto.ShelterResponseDto;
-import com.petadoption.dto.StaffDto;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.petadoption.dto.*;
 
 public class PetMallCLI {
 
@@ -47,10 +46,11 @@ public class PetMallCLI {
                 System.out.println("4. Apply for Adoption");
                 System.out.println("5. Change Password");
                 System.out.println("6. See Shelters");
-                System.out.println("7. See Applications");
-                System.out.println("8. See Adoptions");
-                System.out.println("9. Logout");
-                System.out.println("10. Exit");
+                System.out.println("7. See Available Animals by Shelter");
+                System.out.println("8. See Applications");
+                System.out.println("9. See Adoptions");
+                System.out.println("10. Logout");
+                System.out.println("11. Exit");
                 System.out.print("Choose: ");
                 String choice = scanner.nextLine();
 
@@ -61,10 +61,11 @@ public class PetMallCLI {
                     case "4" -> applyAdoption();
                     case "5" -> changePassword();
                     case "6" -> seeShelters();
-                    case "7" -> seeApplications();
-                    case "8" -> seeAdoptions();
-                    case "9" -> logout();
-                    case "10" -> {
+                    case "7" -> seeAvailableAnimals();
+                    case "8" -> seeApplications();
+                    case "9" -> seeAdoptions();
+                    case "10" -> logout();
+                    case "11" -> {
                         System.out.println("Bye!");
                         System.exit(0);
                     }
@@ -324,8 +325,13 @@ public class PetMallCLI {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() == 200) {
+                // Create ObjectMapper with JavaTimeModule to handle LocalTime
+                ObjectMapper mapperWithTime = new ObjectMapper();
+                mapperWithTime.registerModule(new JavaTimeModule());
+                mapperWithTime.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
                 // Deserialize JSON into ShelterResponseDto array
-                ShelterResponseDto[] shelters = mapper.readValue(response.body(), ShelterResponseDto[].class);
+                ShelterResponseDto[] shelters = mapperWithTime.readValue(response.body(), ShelterResponseDto[].class);
 
                 System.out.println("=== Shelters List ===\n");
 
@@ -386,17 +392,22 @@ public class PetMallCLI {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create("http://localhost:8080/application/getAll"))
                     .header("Authorization", "Bearer " + jwtToken)
-                    .header("Content-Type", "application/json") // GET usually uses JSON
+                    .header("Content-Type", "application/json")
                     .GET()
                     .build();
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() == 200) {
+                // Create ObjectMapper with JavaTimeModule to handle LocalDate/LocalDateTime
+                ObjectMapper mapperWithTime = new ObjectMapper();
+                mapperWithTime.registerModule(new JavaTimeModule());
+                mapperWithTime.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
                 // Parse JSON into list of ApplicationResponseDto
-                List<ApplicationResponseDto> applications = mapper.readValue(
+                List<ApplicationResponseDto> applications = mapperWithTime.readValue(
                         response.body(),
-                        mapper.getTypeFactory().constructCollectionType(List.class, ApplicationResponseDto.class)
+                        mapperWithTime.getTypeFactory().constructCollectionType(List.class, ApplicationResponseDto.class)
                 );
 
                 if (applications.isEmpty()) {
@@ -442,10 +453,15 @@ public class PetMallCLI {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() == 200) {
+                // Create ObjectMapper with JavaTimeModule to handle LocalDate
+                ObjectMapper mapperWithTime = new ObjectMapper();
+                mapperWithTime.registerModule(new JavaTimeModule());
+                mapperWithTime.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
                 // Parse JSON into list of AdoptionDto
-                List<AdoptionDto> adoptions = mapper.readValue(
+                List<AdoptionDto> adoptions = mapperWithTime.readValue(
                         response.body(),
-                        mapper.getTypeFactory().constructCollectionType(List.class, AdoptionDto.class)
+                        mapperWithTime.getTypeFactory().constructCollectionType(List.class, AdoptionDto.class)
                 );
 
                 if (adoptions.isEmpty()) {
@@ -465,6 +481,112 @@ public class PetMallCLI {
             } else {
                 System.out.println("Failed to fetch adoptions: " + response.statusCode());
                 System.out.println(response.body());
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void seeAvailableAnimals() {
+        try {
+            if (jwtToken == null || jwtToken.isEmpty()) {
+                System.out.println("You must login first.");
+                return;
+            }
+
+            // Fetch shelters
+            HttpRequest shelterRequest = HttpRequest.newBuilder()
+                    .uri(URI.create("http://localhost:8080/shelter/getAll"))
+                    .header("Authorization", "Bearer " + jwtToken)
+                    .header("Content-Type", "application/json")
+                    .GET()
+                    .build();
+
+            HttpResponse<String> shelterResponse = client.send(shelterRequest, BodyHandlers.ofString());
+            if (shelterResponse.statusCode() != 200) {
+                System.out.println("Failed to fetch shelters: " + shelterResponse.body());
+                return;
+            }
+
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.registerModule(new JavaTimeModule());
+            mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+            ShelterResponseDto[] shelters = mapper.readValue(shelterResponse.body(), ShelterResponseDto[].class);
+
+            System.out.println("\n=== Select Shelter ===");
+            for (ShelterResponseDto s : shelters) {
+                System.out.println(s.getId() + ". " + s.getName());
+            }
+            System.out.print("Enter Shelter ID: ");
+            Long shelterId = Long.parseLong(scanner.nextLine());
+
+            System.out.print("Enter statuses (comma separated, e.g., AVAILABLE,ADOPTED) or leave empty: ");
+            String statusInput = scanner.nextLine();
+            List<String> statuses = null;
+            if (!statusInput.isBlank()) {
+                statuses = List.of(statusInput.split(",")).stream()
+                        .map(String::trim)
+                        .toList();
+            }
+
+            System.out.print("Filter by Name (leave empty if not): ");
+            String name = scanner.nextLine();
+            if (name.isBlank()) name = null;
+
+            System.out.print("Filter by Species (leave empty if not): ");
+            String species = scanner.nextLine();
+            if (species.isBlank()) species = null;
+
+            System.out.print("Filter by Age (leave empty if not): ");
+            String ageStr = scanner.nextLine();
+            Integer age = ageStr.isBlank() ? null : Integer.parseInt(ageStr);
+
+            // Fetch animals
+            StringBuilder url = new StringBuilder("http://localhost:8080/animals?shelterId=" + shelterId);
+            if (statuses != null) {
+                for (String s : statuses) {
+                    url.append("&status=").append(s);
+                }
+            }
+            if (name != null) url.append("&name=").append(name);
+            if (species != null) url.append("&species=").append(species);
+            if (age != null) url.append("&age=").append(age);
+
+            HttpRequest animalRequest = HttpRequest.newBuilder()
+                    .uri(URI.create(url.toString()))
+                    .header("Authorization", "Bearer " + jwtToken)
+                    .header("Content-Type", "application/json")
+                    .GET()
+                    .build();
+
+            HttpResponse<String> animalResponse = client.send(animalRequest, BodyHandlers.ofString());
+            if (animalResponse.statusCode() == 200) {
+                List<AnimalDto> animals = mapper.readValue(
+                        animalResponse.body(),
+                        mapper.getTypeFactory().constructCollectionType(List.class, AnimalDto.class)
+                );
+
+                if (animals.isEmpty()) {
+                    System.out.println("No animals found for the selected filters.");
+                } else {
+                    System.out.println("\n=== Animals ===");
+                    for (AnimalDto a : animals) {
+                        System.out.println("ID: " + a.getId());
+                        System.out.println("Name: " + a.getName());
+                        System.out.println("Species: " + a.getSpecies());
+                        System.out.println("Breed: " + a.getBreed());
+                        System.out.println("Sex: " + a.getSex());
+                        System.out.println("Age: " + a.getAge());
+                        System.out.println("Weight: " + a.getWeight());
+                        System.out.println("Color: " + a.getColor());
+                        System.out.println("Intake Date: " + a.getIntakeDate());
+                        System.out.println("----------------------");
+                    }
+                }
+            } else {
+                System.out.println("Failed to fetch animals: " + animalResponse.body());
             }
 
         } catch (Exception e) {
