@@ -18,6 +18,16 @@ public class DataInitializer {
     @Bean
     CommandLineRunner initUsers(UserRepository userRepository) {
         return args -> {
+            if (userRepository.findByEmail("manager@gmail.com").isEmpty()) {
+                User manager = User.builder()
+                        .email("manager@gmail.com")
+                        .password(encoder.encode("123")) // choose secure password
+                        .role(Role.MANAGER)
+                        .build();
+                userRepository.save(manager);
+                System.out.println("Default manager created: manager@gmail.com / 123");
+            }
+
             if (userRepository.findByEmail("staff1@gmail.com").isEmpty()) {
                 User staff = User.builder()
                         .email("staff1@gmail.com")

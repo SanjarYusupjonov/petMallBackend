@@ -1,12 +1,12 @@
 package com.petadoption.controller;
 
+import com.petadoption.dto.ShelterRequestDto;
 import com.petadoption.dto.ShelterResponseDto;
 import com.petadoption.service.ShelterService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -18,8 +18,14 @@ public class ShelterController {
 
     @GetMapping("/getAll")
     public List<ShelterResponseDto> getAll() {
-        // extract token from "Bearer <token>"
-//        String token = authHeader.replace("Bearer ", "");
         return shelterService.getAll();
+    }
+
+    @PostMapping("/create")
+    public ResponseEntity<ShelterResponseDto> createShelter(
+            @RequestHeader("Authorization") String token,
+            @RequestBody ShelterRequestDto shelterRequestDto) {
+        ShelterResponseDto createdShelter = shelterService.createShelter(shelterRequestDto, token);
+        return new ResponseEntity<>(createdShelter, HttpStatus.CREATED);
     }
 }
