@@ -1,6 +1,6 @@
 package com.petadoption.entity;
 
-import com.petadoption.enums.Status;
+import com.petadoption.enums.ApplicationStatusEnum;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -21,7 +21,7 @@ public class ApplicationStatus {
     private Application application;
 
     @Enumerated(EnumType.STRING)
-    private Status status;  // e.g., PENDING, APPROVED, REJECTED
+    private ApplicationStatusEnum status;  // e.g., PENDING, APPROVED, REJECTED
 
     @Column(name = "updated_at", columnDefinition = "TIMESTAMP")
     private LocalDateTime updatedAt;

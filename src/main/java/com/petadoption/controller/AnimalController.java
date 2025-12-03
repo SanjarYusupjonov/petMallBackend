@@ -30,4 +30,9 @@ public class AnimalController {
         return ResponseEntity.ok(animals);
     }
 
+    @GetMapping("/{id}/availability")
+    public ResponseEntity<Boolean> isAnimalAvailable(@PathVariable Long id) {
+        boolean available = animalService.isAnimalAvailable(id);
+        return ResponseEntity.ok(available);
+    }
 }

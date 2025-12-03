@@ -1,11 +1,10 @@
 package com.petadoption.dto;
 
+import com.petadoption.enums.ApplicationStatusEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDate;
 
 @Data
 @NoArgsConstructor
@@ -16,7 +15,7 @@ public class ApplicationResponseDto {
     private String animalName;
     private String animalSpecies;
     private java.util.Date submissionDate;   // match entity
-    private com.petadoption.enums.Status status; // match entity
+    private ApplicationStatusEnum status; // match entity
     private java.util.Date statusUpdatedDate; // match entity
 }
 

@@ -234,25 +234,55 @@ public class PetMallCLI {
 
     private static void applyAdoption() {
         try {
-            System.out.print("Enter Pet ID to adopt: ");
-            String petId = scanner.nextLine();
+            while (true) {
+                System.out.print("Enter Pet ID to adopt: ");
+                String petIdStr = scanner.nextLine();
+                Long petId;
+                try {
+                    petId = Long.parseLong(petIdStr);
+                } catch (NumberFormatException e) {
+                    System.out.println("Invalid ID. Try again.");
+                    continue;
+                }
 
-            Map<String, Object> payload = new HashMap<>();
-            payload.put("petId", petId);
+                // STEP 1: Check availability
+                HttpRequest availabilityRequest = HttpRequest.newBuilder()
+                        .uri(URI.create("http://localhost:8080/animals/" + petId + "/availability"))
+                        .header("Authorization", "Bearer " + jwtToken)
+                        .GET()
+                        .build();
 
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("http://localhost:8080/adoption"))
-                    .header("Authorization", "Bearer " + jwtToken)
-                    .header("Content-Type", "application/json")
-                    .POST(BodyPublishers.ofString(mapper.writeValueAsString(payload)))
-                    .build();
+                HttpResponse<String> availabilityResponse = client.send(availabilityRequest, HttpResponse.BodyHandlers.ofString());
 
-            HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
-            if (response.statusCode() == 200) {
-                System.out.println("Adoption request sent!");
-            } else {
-                System.out.println("Failed to apply for adoption.");
+                if (availabilityResponse.statusCode() != 200) {
+                    System.out.println("Failed to check availability: " + availabilityResponse.body());
+                    continue;
+                }
+
+                boolean available = Boolean.parseBoolean(availabilityResponse.body());
+
+                if (!available) {
+                    System.out.println("This animal is not available. Please choose another ID.");
+                    continue;
+                }
+
+                // STEP 2: Apply for adoption
+                HttpRequest applyRequest = HttpRequest.newBuilder()
+                        .uri(URI.create("http://localhost:8080/application?animalId=" + petId))
+                        .header("Authorization", "Bearer " + jwtToken)
+                        .POST(HttpRequest.BodyPublishers.noBody())
+                        .build();
+
+                HttpResponse<String> applyResponse = client.send(applyRequest, HttpResponse.BodyHandlers.ofString());
+
+                if (applyResponse.statusCode() == 200) {
+                    System.out.println("Adoption request sent successfully!");
+                    break; // exit loop after success
+                } else {
+                    System.out.println("Failed to apply for adoption: " + applyResponse.body());
+                }
             }
+
         } catch (Exception e) {
             e.printStackTrace();
         }

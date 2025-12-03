@@ -1,6 +1,6 @@
 package com.petadoption.enums;
 
-public enum Status {
+public enum ApplicationStatusEnum {
     PENDING,
     APPROVED,
     REJECTED

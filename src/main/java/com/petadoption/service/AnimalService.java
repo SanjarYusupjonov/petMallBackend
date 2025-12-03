@@ -60,4 +60,11 @@ public class AnimalService {
                         .build())
                 .toList();
     }
+
+    public boolean isAnimalAvailable(Long animalId) {
+        Animal animal = animalRepository.findById(animalId)
+                .orElseThrow(() -> new RuntimeException("Animal not found"));
+        return animal.getStatus().getName() == AnimalStatusEnum.AVAILABLE;
+    }
+
 }
