@@ -13,10 +13,12 @@ import com.petadoption.repository.ShelterRepository;
 import com.petadoption.repository.UserRepository;
 import com.petadoption.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -122,5 +124,54 @@ public class ShelterService {
                 .address(savedShelter.getAddress())
                 .capacity(savedShelter.getCapacity())
                 .build();
+    }
+
+    public ResponseEntity<?> updateShelter(Long id, ShelterRequestDto dto, String token) {
+        // Validate JWT token if needed
+        String email = jwtUtil.parseToken(token.replace("Bearer ", "")).getBody().getSubject();
+        User manager = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Manager not found"));
+        if (manager.getRole() != Role.MANAGER) {
+            throw new RuntimeException("Unauthorized: Only manager can update shelters");
+        }
+
+        Shelter shelter = shelterRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Shelter not found with id: " + id));
+
+        // Update basic fields
+        if (dto.getName() != null) shelter.setName(dto.getName());
+        if (dto.getAddress() != null) shelter.setAddress(dto.getAddress());
+        if (dto.getCapacity() != null) shelter.setCapacity(dto.getCapacity());
+
+        // Update contacts
+        if (dto.getContacts() != null) {
+            shelter.getContacts().clear();
+            List<ShelterContact> contacts = dto.getContacts().stream().map(c -> {
+                ShelterContact contact = new ShelterContact();
+                contact.setContactType(c.getContactType());
+                contact.setValue(c.getValue());
+                contact.setShelter(shelter);
+                return contact;
+            }).collect(Collectors.toList());
+            shelter.getContacts().addAll(contacts);
+        }
+
+        // Update working hours
+        if (dto.getWorkingHours() != null) {
+            shelter.getWorkingHours().clear();
+            List<ShelterWorkingHour> workingHours = dto.getWorkingHours().stream().map(w -> {
+                ShelterWorkingHour hour = new ShelterWorkingHour();
+                hour.setDayOfWeek(w.getDayOfWeek());
+                hour.setOpeningTime(w.getOpeningTime());
+                hour.setClosingTime(w.getClosingTime());
+                hour.setShelter(shelter);
+                return hour;
+            }).collect(Collectors.toList());
+            shelter.getWorkingHours().addAll(workingHours);
+        }
+
+        Shelter updatedShelter = shelterRepository.save(shelter);
+
+        // Map entity to response DTO
+        return ResponseEntity.ok("Updated");
     }
 }

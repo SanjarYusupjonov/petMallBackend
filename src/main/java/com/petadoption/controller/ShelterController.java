@@ -28,4 +28,12 @@ public class ShelterController {
         ShelterResponseDto createdShelter = shelterService.createShelter(shelterRequestDto, token);
         return new ResponseEntity<>(createdShelter, HttpStatus.CREATED);
     }
+
+    @PutMapping("/update/{id}")
+    public ResponseEntity<?> updateShelter(
+            @RequestHeader("Authorization") String token,
+            @PathVariable Long id,
+            @RequestBody ShelterRequestDto shelterRequestDto) {
+        return  shelterService.updateShelter(id, shelterRequestDto, token);
+    }
 }

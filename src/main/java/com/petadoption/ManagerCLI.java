@@ -158,7 +158,85 @@ public class ManagerCLI {
             e.printStackTrace();
         }
     }
-    private static void updateShelter() { /* same as before */ }
+
+    private static void updateShelter() {
+        try {
+            if (jwtToken == null || jwtToken.isEmpty()) {
+                System.out.println("You must login first.");
+                return;
+            }
+
+            System.out.print("Enter Shelter ID to update: ");
+            Long shelterId = Long.parseLong(scanner.nextLine());
+
+            Map<String, Object> shelterPayload = new HashMap<>();
+
+            System.out.print("New Shelter Name (leave blank to keep unchanged): ");
+            String name = scanner.nextLine();
+            if (!name.isBlank()) shelterPayload.put("name", name);
+
+            System.out.print("New Shelter Address (leave blank to keep unchanged): ");
+            String address = scanner.nextLine();
+            if (!address.isBlank()) shelterPayload.put("address", address);
+
+            System.out.print("New Shelter Capacity (leave blank to keep unchanged): ");
+            String capacityInput = scanner.nextLine();
+            if (!capacityInput.isBlank()) shelterPayload.put("capacity", Long.parseLong(capacityInput));
+
+            // Contacts
+            List<Map<String, String>> contacts = new ArrayList<>();
+            while (true) {
+                System.out.print("Add/Update contact? (yes/no): ");
+                String ans = scanner.nextLine();
+                if (ans.equalsIgnoreCase("no")) break;
+
+                Map<String, String> contact = new HashMap<>();
+                System.out.print("Contact Type (phone/email/fax): ");
+                contact.put("contactType", scanner.nextLine());
+                System.out.print("Contact Value: ");
+                contact.put("value", scanner.nextLine());
+                contacts.add(contact);
+            }
+            if (!contacts.isEmpty()) shelterPayload.put("contacts", contacts);
+
+            // Working hours
+            List<Map<String, String>> workingHours = new ArrayList<>();
+            while (true) {
+                System.out.print("Add/Update working hour? (yes/no): ");
+                String ans = scanner.nextLine();
+                if (ans.equalsIgnoreCase("no")) break;
+
+                Map<String, String> hour = new HashMap<>();
+                System.out.print("Day of Week: ");
+                hour.put("dayOfWeek", scanner.nextLine());
+                System.out.print("Opening Time (HH:mm): ");
+                hour.put("openingTime", scanner.nextLine());
+                System.out.print("Closing Time (HH:mm): ");
+                hour.put("closingTime", scanner.nextLine());
+                workingHours.add(hour);
+            }
+            if (!workingHours.isEmpty()) shelterPayload.put("workingHours", workingHours);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("http://localhost:8080/shelter/update/" + shelterId))
+                    .header("Authorization", "Bearer " + jwtToken)
+                    .header("Content-Type", "application/json")
+                    .PUT(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(shelterPayload)))
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 200) {
+                System.out.println("Shelter updated successfully!");
+            } else {
+                System.out.println("Failed to update shelter: " + response.body());
+            }
+
+        } catch (Exception e) {
+            System.out.println("Error updating shelter: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
     private static void createStaff() { /* same as before */ }
     private static void deleteStaff() { /* same as before */ }
 }
