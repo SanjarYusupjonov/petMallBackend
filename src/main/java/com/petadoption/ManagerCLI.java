@@ -237,6 +237,49 @@ public class ManagerCLI {
         }
     }
 
-    private static void createStaff() { /* same as before */ }
+    private static void createStaff() {
+        try {
+            if (jwtToken == null || jwtToken.isEmpty()) {
+                System.out.println("You must login first.");
+                return;
+            }
+
+            Map<String, Object> staffPayload = new HashMap<>();
+            System.out.print("Staff Name: ");
+            staffPayload.put("name", scanner.nextLine());
+
+            System.out.print("Staff Address: ");
+            staffPayload.put("address", scanner.nextLine());
+
+            System.out.print("Staff Email: ");
+            staffPayload.put("email", scanner.nextLine());
+
+            System.out.print("Staff Password: ");
+            staffPayload.put("password", scanner.nextLine());
+
+            System.out.print("Shelter ID: ");
+            staffPayload.put("shelterId", Long.parseLong(scanner.nextLine()));
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("http://localhost:8080/staff/create"))
+                    .header("Authorization", "Bearer " + jwtToken)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(staffPayload)))
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() == 200 || response.statusCode() == 201) {
+                System.out.println("Staff created successfully!");
+                System.out.println("Response: " + response.body());
+            } else {
+                System.out.println("Failed to create staff: " + response.body());
+            }
+
+        } catch (Exception e) {
+            System.out.println("Error creating staff: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
     private static void deleteStaff() { /* same as before */ }
 }
