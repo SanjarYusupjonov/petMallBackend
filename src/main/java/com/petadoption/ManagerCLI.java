@@ -281,5 +281,6 @@ public class ManagerCLI {
             e.printStackTrace();
         }
     }
+
     private static void deleteStaff() { /* same as before */ }
 }

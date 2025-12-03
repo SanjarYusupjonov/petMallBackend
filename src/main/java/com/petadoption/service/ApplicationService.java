@@ -2,6 +2,7 @@ package com.petadoption.service;
 
 import com.petadoption.dto.AdopterDto;
 import com.petadoption.dto.ApplicationResponseDto;
+import com.petadoption.dto.ApplicationResponseDtoStaff;
 import com.petadoption.entity.Adopter;
 import com.petadoption.entity.Animal;
 import com.petadoption.entity.Application;
@@ -14,8 +15,11 @@ import com.petadoption.repository.ApplicationRepository;
 import com.petadoption.repository.ApplicationStatusRepository;
 import com.petadoption.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -74,4 +78,46 @@ public class ApplicationService {
         applicationStatusRepository.save(applicationStatus);
     }
 
+    public List<ApplicationResponseDtoStaff> getAllApplicationsRaw(String token) {
+        List<Object[]> results = applicationRepository.findAllApplicationsWithLatestStatusRaw();
+        List<ApplicationResponseDtoStaff> applications = new ArrayList<>();
+
+        for (Object[] row : results) {
+            applications.add(ApplicationResponseDtoStaff.builder()
+                    .id(((Number) row[0]).longValue())
+                    .animalName((String) row[1])
+                    .animalSpecies((String) row[2])
+                    .adopterName((String) row[3])
+                    .submissionDate(new java.util.Date(((java.sql.Timestamp) row[4]).getTime()))
+                    .status(Enum.valueOf(ApplicationStatusEnum.class, (String) row[5]))
+                    .statusUpdatedDate(new java.util.Date(((java.sql.Timestamp) row[6]).getTime()))
+                    .build());
+        }
+        return applications;
+    }
+
+    public ResponseEntity<?> updateApplicationStatus(String token, Long applicationId, ApplicationStatusEnum newStatus) {
+        // Optional: validate token if needed
+        String email = jwtUtil.parseToken(token).getBody().getSubject();
+        // You could optionally verify if the staff exists here
+
+        Optional<Application> applicationOpt = applicationRepository.findById(applicationId);
+
+        if (applicationOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body("Application not found with ID: " + applicationId);
+        }
+
+        Application application = applicationOpt.get();
+
+        // Create new ApplicationStatus
+        ApplicationStatus status = ApplicationStatus.builder()
+                .application(application)
+                .status(newStatus)
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        applicationStatusRepository.save(status);
+
+        return ResponseEntity.ok("Application status updated to " + newStatus);
+    }
 }

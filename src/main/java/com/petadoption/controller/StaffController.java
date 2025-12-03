@@ -1,7 +1,9 @@
 package com.petadoption.controller;
 
+import com.petadoption.dto.AdopterDto;
 import com.petadoption.dto.StaffDto;
 import com.petadoption.dto.StaffRequestDto;
+import com.petadoption.dto.StaffUpdateRequest;
 import com.petadoption.service.StaffService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -23,5 +25,22 @@ public class StaffController {
         // Token can be validated in service if needed
         StaffDto createdStaff = staffService.createStaff(requestDto);
         return new ResponseEntity<>(createdStaff, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/me")
+    public StaffDto getProfile(@RequestHeader("Authorization") String authHeader) {
+        // extract token from "Bearer <token>"
+        String token = authHeader.replace("Bearer ", "");
+        return staffService.getProfileFromToken(token);
+    }
+
+    @PutMapping("/update/profile")
+    public ResponseEntity<?> updateProfile(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody StaffUpdateRequest request) {
+
+        String token = authHeader.replace("Bearer ", "");
+
+        return staffService.updateProfile(token, request);
     }
 }
